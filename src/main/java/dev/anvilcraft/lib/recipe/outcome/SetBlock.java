@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.recipe.outcome;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.anvilcraft.lib.AnvilLib;
 import dev.anvilcraft.lib.init.reicpe.LibRecipeOutcomeTypes;
 import dev.anvilcraft.lib.recipe.cache.BlockCache;
 import dev.anvilcraft.lib.recipe.util.InWorldRecipeContext;
@@ -11,11 +12,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.phys.Vec3;
@@ -72,8 +76,13 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
         if (this.state.hasBlockEntity() && this.state.getBlock() instanceof EntityBlock entityBlock) {
             BlockEntity entity = entityBlock.newBlockEntity(blockPos, this.state);
             if (entity != null) {
-                entity.loadWithComponents(this.nbt, context.getLevel().registryAccess());
-                cache.setBlockEntity(blockPos, entity);
+                try (
+                    ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(entity.problemPath(), AnvilLib.LOGGER)
+                ) {
+                    ValueInput input = TagValueInput.create(reporter, context.getLevel().registryAccess(), this.nbt);
+                    entity.loadWithComponents(input);
+                    cache.setBlockEntity(blockPos, entity);
+                }
             }
         }
         context.putAcceptor(BlockCache.BLOCK_CACHE.location(), BlockCache.DEFAULT_ACCEPTOR);
@@ -86,20 +95,12 @@ public record SetBlock(BlockState state, CompoundTag nbt, Vec3 offset, NumberPro
         /**
          * Map编解码器
          */
-        private static final MapCodec<SetBlock> CODEC = RecordCodecBuilder.mapCodec(
-            instance -> instance.group(
-                CodecUtil.BLOCK_STATE_MAP_CODEC
-                    .forGetter(SetBlock::state),
-                CompoundTag.CODEC
-                    .optionalFieldOf("nbt", null)
-                    .forGetter(SetBlock::nbt),
-                Vec3.CODEC
-                    .fieldOf("offset")
-                    .forGetter(SetBlock::offset),
-                CodecUtil.NUMBER_PROVIDER_CODEC
-                    .optionalFieldOf("chance", ConstantValue.exactly(1.0f))
-                    .forGetter(SetBlock::chance)
-            ).apply(instance, SetBlock::new));
+        private static final MapCodec<SetBlock> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            CodecUtil.BLOCK_STATE_MAP_CODEC.forGetter(SetBlock::state),
+            CompoundTag.CODEC.optionalFieldOf("nbt", null).forGetter(SetBlock::nbt),
+            Vec3.CODEC.fieldOf("offset").forGetter(SetBlock::offset),
+            CodecUtil.NUMBER_PROVIDER_CODEC.optionalFieldOf("chance", ConstantValue.exactly(1.0f)).forGetter(SetBlock::chance)
+        ).apply(instance, SetBlock::new));
 
         /**
          * 流编解码器

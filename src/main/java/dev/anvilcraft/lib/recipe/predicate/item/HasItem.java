@@ -7,10 +7,9 @@ import dev.anvilcraft.lib.recipe.predicate.IRecipePredicate;
 import dev.anvilcraft.lib.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.recipe.predicate.function.SaveComponentToTag;
 import lombok.Getter;
-import net.minecraft.advancements.critereon.ItemSubPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
-import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.predicates.DataComponentPredicate;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -260,19 +259,8 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
          * @param <T>       子谓词类型
          * @return 构建器实例
          */
-        public <T extends ItemSubPredicate> Builder with(ItemSubPredicate.Type<T> type, T predicate) {
+        public <T extends DataComponentPredicate> Builder with(DataComponentPredicate.Type<T> type, T predicate) {
             this.item.withSubPredicate(type, predicate);
-            return this;
-        }
-
-        /**
-         * 设置数据组件谓词
-         *
-         * @param components 数据组件谓词
-         * @return 构建器实例
-         */
-        public Builder has(DataComponentPredicate components) {
-            this.item.hasComponents(components);
             return this;
         }
 

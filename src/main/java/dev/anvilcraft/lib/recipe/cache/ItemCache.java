@@ -250,7 +250,7 @@ public class ItemCache {
         Vec3 elementPos = entity.getBlockPos().getCenter();
         Vec3 elementRange = new Vec3(0.5, 0.5, 0.5);
         Predicate<BlockEntity> inTag = blockEntity -> false;
-        Optional<HolderSet.Named<BlockEntityType<?>>> holders = BuiltInRegistries.BLOCK_ENTITY_TYPE.getTag(LibBlockEntityTags.ITEM_CACHE);
+        Optional<HolderSet.Named<BlockEntityType<?>>> holders = BuiltInRegistries.BLOCK_ENTITY_TYPE.get(LibBlockEntityTags.ITEM_CACHE);
         if (holders.isPresent()) {
             HolderSet.Named<BlockEntityType<?>> named = holders.get();
             List<ResourceKey<BlockEntityType<?>>> keys = new ArrayList<>();

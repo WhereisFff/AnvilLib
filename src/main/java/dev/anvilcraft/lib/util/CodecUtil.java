@@ -60,7 +60,7 @@ public abstract class CodecUtil {
     public static final Codec<Item> ITEM_CODEC = Codec.STRING.flatXmap(
         s -> {
             try {
-                Item item = BuiltInRegistries.ITEM.get(ResourceLocation.parse(s));
+                Item item = BuiltInRegistries.ITEM.getValue(ResourceLocation.parse(s));
                 if (item == Items.AIR) {
                     return DataResult.error(() -> "failed parse item key: " + s);
                 } else {
@@ -82,7 +82,7 @@ public abstract class CodecUtil {
     public static final Codec<Block> BLOCK_CODEC = Codec.STRING.flatXmap(
         s -> {
             try {
-                Block block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(s));
+                Block block = BuiltInRegistries.BLOCK.getValue(ResourceLocation.parse(s));
                 if (block == Blocks.AIR) {
                     return DataResult.error(() -> "failed parse block key: " + s);
                 } else {
@@ -155,7 +155,7 @@ public abstract class CodecUtil {
             if (!BuiltInRegistries.ENTITY_TYPE.containsKey(id)) {
                 return DataResult.error(() -> "Could not find entity type " + id + " as it does not exist in ENTITY_TYPE registry.");
             }
-            EntityType<?> e = BuiltInRegistries.ENTITY_TYPE.get(id);
+            EntityType<?> e = BuiltInRegistries.ENTITY_TYPE.getValue(id);
             return DataResult.success(e);
         }, b -> {
             ResourceLocation key = BuiltInRegistries.ENTITY_TYPE.getKey(b);
@@ -189,7 +189,7 @@ public abstract class CodecUtil {
     );
 
     public static MapCodec<NonNullList<Ingredient>> createIngredientListCodec(String fieldName, int size, String recipeType) {
-        return Ingredient.CODEC_NONEMPTY.listOf(1, size).fieldOf(fieldName).flatXmap(
+        return Ingredient.CODEC.listOf(1, size).fieldOf(fieldName).flatXmap(
             i -> {
                 Ingredient[] ingredients = i.toArray(Ingredient[]::new);
                 if (ingredients.length == 0) {
@@ -197,7 +197,7 @@ public abstract class CodecUtil {
                 } else {
                     return ingredients.length > size
                            ? DataResult.error(() -> "Too many ingredients for %s recipe. The maximum is: %d".formatted(recipeType, size))
-                           : DataResult.success(NonNullList.of(Ingredient.EMPTY, ingredients));
+                           : DataResult.success(NonNullList.of(Ingredient.of(), ingredients));
                 }
             }, DataResult::success
         );
@@ -236,8 +236,8 @@ public abstract class CodecUtil {
 
     // STREAM_CODEC
     public static StreamCodec<FriendlyByteBuf, Vec3> VEC3_STREAM_CODEC = StreamCodec.of(
-        FriendlyByteBuf::writeVec3,
-        FriendlyByteBuf::readVec3
+        (buf, vec3) -> buf.writeVec3(vec3),
+        buf -> buf.readVec3()
     );
 
     private static final byte CONSTANT_TYPE = 1;
@@ -280,23 +280,8 @@ public abstract class CodecUtil {
         };
     }
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, Item> ITEM_STREAM_CODEC = StreamCodec.of(
-        (buf, item) -> buf.writeUtf(BuiltInRegistries.ITEM.getKey(item).toString()),
-        buf -> BuiltInRegistries.ITEM.get(ResourceLocation.parse(buf.readUtf()))
-    );
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, Block> BLOCK_STREAM_CODEC = StreamCodec.of(
-        (buf, block) -> buf.writeUtf(BuiltInRegistries.BLOCK.getKey(block).toString()),
-        buf -> BuiltInRegistries.BLOCK.get(ResourceLocation.parse(buf.readUtf()))
-    );
-
     public static final StreamCodec<? super ByteBuf, BlockState> BLOCK_STATE_STREAM_CODEC = StreamCodec.of(
         (buf, blockState) -> buf.writeInt(Block.getId(blockState)), (buf) -> Block.stateById(buf.readInt()));
-
-    public static final StreamCodec<RegistryFriendlyByteBuf, EntityType<?>> ENTITY_STREAM_CODEC = StreamCodec.of(
-        (buf, e) -> buf.writeResourceLocation(BuiltInRegistries.ENTITY_TYPE.getKey(e)),
-        buf -> BuiltInRegistries.ENTITY_TYPE.get(buf.readResourceLocation())
-    );
 
     public static final StreamCodec<RegistryFriendlyByteBuf, Character> CHAR_STREAM_CODEC = StreamCodec.of(
         (buf, character) -> buf.writeUtf(character.toString()), buf -> buf.readUtf().charAt(0));

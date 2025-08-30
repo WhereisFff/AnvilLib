@@ -20,6 +20,10 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven { // Anvil Lib
+        name = "Cjsah Maven"
+        url = "https://server.cjsah.net:1002/maven/"
+    }
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
@@ -66,7 +70,7 @@ neoForge {
         }
 
         data {
-            data()
+            clientData()
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')
@@ -75,6 +79,7 @@ neoForge {
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
 
+        var isJbr = System.getProperty('java.vm.vendor').contains('JetBrains')
         // applies to all the run configs above
         configureEach {
             // Recommended logging data for a userdev environment
@@ -83,7 +88,9 @@ neoForge {
             // "REGISTRIES": For firing of registry events.
             // "REGISTRYDUMP": For getting the contents of all registries.
             systemProperty 'forge.logging.markers', 'REGISTRIES'
-
+            if (isJbr) {
+                jvmArgument "-XX:+AllowEnhancedClassRedefinition"
+            }
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
@@ -132,11 +139,24 @@ tasks.withType(ProcessResources).configureEach {
     }
 }
 
+tasks.register('sourcesJar', Jar) {
+    from delombok.outputs.files
+    dependsOn delombok
+    archiveClassifier = "sources"
+}
+
+artifacts {
+    archives tasks.jar
+    archives tasks.sourcesJar
+}
+
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
             from components.java
+
+            artifact sourcesJar
         }
     }
     repositories {

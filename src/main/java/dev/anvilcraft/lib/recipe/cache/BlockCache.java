@@ -6,12 +6,15 @@ import dev.anvilcraft.lib.recipe.util.InWorldRecipeData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.ValueInput;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -174,7 +177,12 @@ public class BlockCache {
             CompoundTag oldTag = oldEntity.saveWithFullMetadata(access);
             CompoundTag newTag = entity.saveWithFullMetadata(access);
             if (oldTag.equals(newTag)) return;
-            oldEntity.loadWithComponents(newTag, access);
+            try (
+                ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(oldEntity.problemPath(), AnvilLib.LOGGER)
+            ) {
+                ValueInput input = TagValueInput.create(reporter, this.level.registryAccess(), newTag);
+                oldEntity.loadWithComponents(input);
+            }
         });
     }
 }

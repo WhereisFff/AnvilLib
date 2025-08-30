@@ -9,7 +9,6 @@ import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
@@ -18,8 +17,9 @@ import org.jetbrains.annotations.NotNull;
 @EventBusSubscriber(modid = AnvilLib.MOD_ID)
 public class ResourceEventListener {
     @SubscribeEvent
-    public static void onRecipeLoad(@NotNull RecipesUpdatedEvent event) {
-        ResourceEventListener.initManager(event.getRecipeManager());
+    public static void onRecipeLoad(@NotNull OnDatapackSyncEvent event) {
+        RecipeManager recipeManager = event.getPlayerList().getServer().getRecipeManager();
+        ResourceEventListener.initManager(recipeManager);
     }
 
     @SubscribeEvent

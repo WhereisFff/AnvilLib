@@ -292,7 +292,7 @@ public class BlockStatePredicate {
          * @return 构建器实例
          */
         public Builder of(TagKey<Block> tag) {
-            this.blocks = BuiltInRegistries.BLOCK.getOrCreateTag(tag);
+            this.blocks = BuiltInRegistries.BLOCK.getOrThrow(tag);
             return this;
         }
 

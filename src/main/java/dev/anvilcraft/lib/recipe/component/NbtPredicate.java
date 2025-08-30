@@ -1,18 +1,22 @@
 package dev.anvilcraft.lib.recipe.component;
 
 import com.mojang.serialization.Codec;
+import dev.anvilcraft.lib.AnvilLib;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.level.storage.TagValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
@@ -80,11 +84,18 @@ public record NbtPredicate(CompoundTag tag) implements Predicate<Tag> {
      * @return NBT标签
      */
     public static CompoundTag getEntityTagToCompare(Entity entity) {
-        CompoundTag compoundtag = entity.saveWithoutId(new CompoundTag());
-        if (entity instanceof Player) {
-            ItemStack itemstack = ((Player) entity).getInventory().getSelected();
-            if (!itemstack.isEmpty()) {
-                compoundtag.put("SelectedItem", itemstack.save(entity.registryAccess()));
+        CompoundTag compoundtag = new CompoundTag();
+        try (
+            ProblemReporter.ScopedCollector reporter = new ProblemReporter.ScopedCollector(entity.problemPath(), AnvilLib.LOGGER)
+        ) {
+            TagValueOutput output = TagValueOutput.createWithContext(reporter, entity.registryAccess());
+            entity.saveWithoutId(output);
+            compoundtag = output.buildResult();
+            if (entity instanceof Player) {
+                ItemStack itemstack = ((Player) entity).getInventory().getSelectedItem();
+                if (!itemstack.isEmpty()) {
+                    compoundtag.put("SelectedItem", ItemStack.CODEC.encode(itemstack, NbtOps.INSTANCE, new CompoundTag()).getOrThrow());
+                }
             }
         }
         return compoundtag;

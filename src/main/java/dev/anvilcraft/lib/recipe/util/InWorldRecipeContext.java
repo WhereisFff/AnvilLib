@@ -7,6 +7,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.context.ContextMap;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeInput;
@@ -185,7 +186,7 @@ public class InWorldRecipeContext implements RecipeInput {
      * @return 战利品上下文
      */
     public LootContext emptyLootContext() {
-        return new LootContext.Builder(new LootParams(this.level, Map.of(), Map.of(), 0)).create(Optional.empty());
+        return new LootContext.Builder(new LootParams(this.level, ContextMap.EMPTY, Map.of(), 0)).create(Optional.empty());
     }
 
     /**

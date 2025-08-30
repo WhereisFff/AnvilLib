@@ -22,11 +22,13 @@ import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
 import net.minecraft.core.NonNullList;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -950,18 +952,15 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     }
 
     @Override
-    public void save(RecipeOutput recipeOutput, ResourceLocation id) {
-        Advancement.Builder builder = recipeOutput.advancement()
+    public void save(RecipeOutput output, ResourceKey<Recipe<?>> id) {
+        Advancement.Builder builder = output.advancement()
             .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(id))
             .rewards(AdvancementRewards.Builder.recipe(id))
             .requirements(AdvancementRequirements.Strategy.OR);
         Objects.requireNonNull(builder);
         this.criteria.forEach(builder::addCriterion);
         InWorldRecipe recipe = this.build();
-        recipeOutput.accept(
-            ResourceLocation.fromNamespaceAndPath(id.getNamespace(), this.group + "/" + id.getPath()),
-            recipe,
-            builder.build(id.withPrefix("recipes/" + this.group + "/"))
-        );
+        ResourceLocation location = id.location();
+        output.accept(id, recipe, builder.build(location.withPrefix("recipes/" + this.group + "/")));
     }
 }

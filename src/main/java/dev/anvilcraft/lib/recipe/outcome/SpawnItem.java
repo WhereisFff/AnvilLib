@@ -118,24 +118,13 @@ public record SpawnItem(ItemStack item, Vec3 offset, NumberProvider count, List<
          * Map编解码器
          */
         private static final MapCodec<SpawnItem> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-                ItemStack.ITEM_NON_AIR_CODEC
-                    .fieldOf("item")
-                    .forGetter(spawnItem -> spawnItem.item().getItemHolder()),
-                DataComponentPatch.CODEC
-                    .optionalFieldOf("components", DataComponentPatch.EMPTY)
-                    .forGetter(spawnItem -> spawnItem.item().getComponentsPatch()),
-                Vec3.CODEC
-                    .fieldOf("offset")
-                    .forGetter(SpawnItem::offset),
-                CodecUtil.NUMBER_PROVIDER_CODEC
-                    .optionalFieldOf("count", ConstantValue.exactly(1.0f))
-                    .forGetter(SpawnItem::count),
-                IOutcomeFunction.CODEC
-                    .listOf()
-                    .optionalFieldOf("functions", List.of())
-                    .forGetter(SpawnItem::functions)
-            ).apply(instance, SpawnItem::new)
-        );
+            Item.CODEC.fieldOf("item").forGetter(spawnItem -> spawnItem.item().getItemHolder()),
+            DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY)
+                .forGetter(spawnItem -> spawnItem.item().getComponentsPatch()),
+            Vec3.CODEC.fieldOf("offset").forGetter(SpawnItem::offset),
+            CodecUtil.NUMBER_PROVIDER_CODEC.optionalFieldOf("count", ConstantValue.exactly(1.0f)).forGetter(SpawnItem::count),
+            IOutcomeFunction.CODEC.listOf().optionalFieldOf("functions", List.of()).forGetter(SpawnItem::functions)
+        ).apply(instance, SpawnItem::new));
 
         /**
          * 流编解码器

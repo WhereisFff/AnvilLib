@@ -8,12 +8,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 @Mod(AnvilLib.MOD_ID)
 public class AnvilLib {
     public static final String MOD_ID = "anvillib";
     public static final AnvilLibConfig CONFIG = ConfigManager.register(AnvilLib.MOD_ID, AnvilLibConfig::new);
+    public static final Logger LOGGER = LoggerFactory.getLogger(AnvilLib.MOD_ID);
 
     public AnvilLib(IEventBus modEventBus, ModContainer modContainer) {
         LibItemSubPredicates.initialize(modEventBus);
