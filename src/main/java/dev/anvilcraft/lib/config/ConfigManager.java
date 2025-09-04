@@ -91,8 +91,10 @@ public class ConfigManager {
         this.configSpecMap.values().forEach(ConfigRecord::load);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void registerScreen(ModContainer container) {
+        if (!FMLLoader.getDist().isClient()) {
+            return;
+        }
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
     }
 
