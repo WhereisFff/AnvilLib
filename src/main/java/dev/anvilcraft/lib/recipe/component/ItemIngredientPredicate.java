@@ -8,6 +8,7 @@ import dev.anvilcraft.lib.util.CodecUtil;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.advancements.critereon.DataComponentMatchers;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.component.DataComponentExactPredicate;
@@ -73,8 +74,8 @@ public record ItemIngredientPredicate(
      * @param tag 物品标签
      * @return 构建器实例
      */
-    public static Builder of(TagKey<Item> tag) {
-        return new Builder().of(tag);
+    public static Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
+        return new Builder().of(getter, tag);
     }
 
     @Override
@@ -168,8 +169,8 @@ public record ItemIngredientPredicate(
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.items = BuiltInRegistries.ITEM.get(tag).map(item -> item);
+        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
+            this.items = Optional.of(getter.getOrThrow(tag));
             return this;
         }
 

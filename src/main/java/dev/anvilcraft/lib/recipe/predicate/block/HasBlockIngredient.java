@@ -6,6 +6,7 @@ import dev.anvilcraft.lib.recipe.component.BlockStatePredicate;
 import dev.anvilcraft.lib.recipe.util.InWorldRecipeContext;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.properties.Property;
@@ -173,8 +174,8 @@ public class HasBlockIngredient extends HasBlockBase<HasBlockIngredient> {
          * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Block> tag) {
-            this.predicate.of(tag);
+        public Builder of(HolderGetter<Block> getter, TagKey<Block> tag) {
+            this.predicate.of(getter, tag);
             return this;
         }
 

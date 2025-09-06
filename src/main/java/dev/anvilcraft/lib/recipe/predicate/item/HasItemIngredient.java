@@ -10,6 +10,7 @@ import dev.anvilcraft.lib.recipe.predicate.function.IPredicateFunction;
 import dev.anvilcraft.lib.recipe.predicate.function.SaveComponentToTag;
 import dev.anvilcraft.lib.recipe.util.InWorldRecipeContext;
 import lombok.Getter;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.predicates.DataComponentPredicate;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -171,8 +172,8 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.item.of(tag);
+        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
+            this.item.of(getter, tag);
             return this;
         }
 

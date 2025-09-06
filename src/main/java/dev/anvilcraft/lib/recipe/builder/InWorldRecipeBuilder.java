@@ -19,6 +19,7 @@ import net.minecraft.advancements.AdvancementRequirements;
 import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.NonNullList;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.data.recipes.RecipeOutput;
@@ -55,6 +56,8 @@ import java.util.function.Supplier;
 @EqualsAndHashCode
 @SuppressWarnings("unused")
 public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements RecipeBuilder {
+    protected final @Nullable HolderGetter<Block> blockGetter;
+    protected final @Nullable HolderGetter<Item> itemGetter;
     /**
      * 配方图标
      */
@@ -103,12 +106,31 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
     /**
      * 构造一个新的世界内配方构建器
      *
+     * @param blockGetter 块获取器
+     * @param itemGetter  物品获取器
+     * @param trigger     配方触发器
+     * @param compatible  是否兼容
+     */
+    protected InWorldRecipeBuilder(
+        @Nullable HolderGetter<Block> blockGetter,
+        @Nullable HolderGetter<Item> itemGetter,
+        IRecipeTrigger trigger,
+        boolean compatible
+    ) {
+        this.blockGetter = blockGetter;
+        this.itemGetter = itemGetter;
+        this.trigger = trigger;
+        this.compatible = compatible;
+    }
+
+    /**
+     * 构造一个新的世界内配方构建器
+     *
      * @param trigger    配方触发器
      * @param compatible 是否兼容
      */
     protected InWorldRecipeBuilder(IRecipeTrigger trigger, boolean compatible) {
-        this.trigger = trigger;
-        this.compatible = compatible;
+        this(null, null, trigger, compatible);
     }
 
     /**
@@ -378,7 +400,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasItemIngredient(TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(this.offset).build());
+        if (this.itemGetter == null) return this.self();
+        return this.with(HasItemIngredient.builder().of(this.itemGetter, items).offset(this.offset).build());
     }
 
     /**
@@ -389,7 +412,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasItemIngredient(Vec3 offset, TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(offset).build());
+        if (this.itemGetter == null) return this.self();
+        return this.with(HasItemIngredient.builder().of(this.itemGetter, items).offset(offset).build());
     }
 
     /**
@@ -402,7 +426,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasItemIngredient(double x, double y, double z, TagKey<Item> items) {
-        return this.with(HasItemIngredient.builder().of(items).offset(x, y, z).build());
+        if (this.itemGetter == null) return this.self();
+        return this.with(HasItemIngredient.builder().of(this.itemGetter, items).offset(x, y, z).build());
     }
 
     /**
@@ -493,7 +518,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlock(TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(this.offset).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlock.builder().of(this.blockGetter, tag).offset(this.offset).build());
     }
 
     /**
@@ -504,7 +530,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlock(Vec3 offset, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(offset).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlock.builder().of(this.blockGetter, tag).offset(offset).build());
     }
 
     /**
@@ -517,7 +544,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlock(double x, double y, double z, TagKey<Block> tag) {
-        return this.with(HasBlock.builder().of(tag).offset(x, y, z).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlock.builder().of(this.blockGetter, tag).offset(x, y, z).build());
     }
 
     /**
@@ -655,7 +683,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlockIngredient(TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(this.offset).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlockIngredient.builder().of(this.blockGetter, tag).offset(this.offset).build());
     }
 
     /**
@@ -666,7 +695,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlockIngredient(Vec3 offset, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(offset).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlockIngredient.builder().of(this.blockGetter, tag).offset(offset).build());
     }
 
     /**
@@ -679,7 +709,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasBlockIngredient(double x, double y, double z, TagKey<Block> tag) {
-        return this.with(HasBlockIngredient.builder().of(tag).offset(new Vec3(x, y, z)).build());
+        if (this.blockGetter == null) return this.self();
+        return this.with(HasBlockIngredient.builder().of(this.blockGetter, tag).offset(new Vec3(x, y, z)).build());
     }
 
     /**

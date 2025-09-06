@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -277,8 +278,8 @@ public class BlockStatePredicate {
          * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Block> tag) {
-            this.blocks = BuiltInRegistries.BLOCK.get(tag).map(named -> (HolderSet<Block>) named).orElse(HolderSet.direct());
+        public Builder of(HolderGetter<Block> getter, TagKey<Block> tag) {
+            this.blocks = getter.getOrThrow(tag);
             return this;
         }
 
