@@ -77,8 +77,8 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
      *
      * @return 构建器实例
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(HolderGetter<Item> getter) {
+        return new Builder(getter);
     }
 
     /**
@@ -117,8 +117,12 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
     public static class Builder {
         private Vec3 offset = Vec3.ZERO;
         private Vec3 range = new Vec3(1.0, 1.0, 1.0);
-        private final ItemIngredientPredicate.Builder item = ItemIngredientPredicate.Builder.item();
+        private final ItemIngredientPredicate.Builder item;
         private final List<IPredicateFunction<?>> functions = new ArrayList<>();
+
+        public Builder(HolderGetter<Item> getter) {
+            this.item = ItemIngredientPredicate.Builder.item(getter);
+        }
 
         /**
          * 设置检测范围
@@ -172,8 +176,8 @@ public class HasItemIngredient extends HasItemBase<HasItemIngredient, ItemIngred
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
-            this.item.of(getter, tag);
+        public Builder of(TagKey<Item> tag) {
+            this.item.of(tag);
             return this;
         }
 

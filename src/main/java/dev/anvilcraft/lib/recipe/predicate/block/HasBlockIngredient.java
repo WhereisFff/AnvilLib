@@ -39,8 +39,8 @@ public class HasBlockIngredient extends HasBlockBase<HasBlockIngredient> {
      *
      * @return 构建器实例
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(HolderGetter<Block> getter) {
+        return new Builder(getter);
     }
 
     @Override
@@ -71,7 +71,11 @@ public class HasBlockIngredient extends HasBlockBase<HasBlockIngredient> {
      */
     public static class Builder {
         private Vec3 offset = Vec3.ZERO;
-        private final BlockStatePredicate.Builder predicate = BlockStatePredicate.builder();
+        private final BlockStatePredicate.Builder predicate;
+
+        public Builder(HolderGetter<Block> getter) {
+            this.predicate = BlockStatePredicate.builder(getter);
+        }
 
         /**
          * 设置偏移量
@@ -174,8 +178,8 @@ public class HasBlockIngredient extends HasBlockBase<HasBlockIngredient> {
          * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Block> getter, TagKey<Block> tag) {
-            this.predicate.of(getter, tag);
+        public Builder of(TagKey<Block> tag) {
+            this.predicate.of(tag);
             return this;
         }
 

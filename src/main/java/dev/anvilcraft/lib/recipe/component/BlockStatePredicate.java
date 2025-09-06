@@ -12,7 +12,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -213,8 +212,8 @@ public class BlockStatePredicate {
      *
      * @return 构建器实例
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(HolderGetter<Block> getter) {
+        return new Builder(getter);
     }
 
     /**
@@ -227,6 +226,7 @@ public class BlockStatePredicate {
         }
     )
     public static class Builder {
+        private final HolderGetter<Block> getter;
         private final List<List<PropertyMatcher>> properties = new ArrayList<>();
         private final List<NbtPredicate> nbts = new ArrayList<>();
         private HolderSet<Block> blocks = HolderSet.empty();
@@ -235,7 +235,8 @@ public class BlockStatePredicate {
         /**
          * 构造一个构建器
          */
-        private Builder() {
+        private Builder(HolderGetter<Block> getter) {
+            this.getter = getter;
         }
 
         /**
@@ -278,8 +279,8 @@ public class BlockStatePredicate {
          * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Block> getter, TagKey<Block> tag) {
-            this.blocks = getter.getOrThrow(tag);
+        public Builder of(TagKey<Block> tag) {
+            this.blocks = this.getter.getOrThrow(tag);
             return this;
         }
 

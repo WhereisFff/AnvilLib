@@ -46,8 +46,8 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
      *
      * @return 构建器实例
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(HolderGetter<Item> getter) {
+        return new Builder(getter);
     }
 
     @Override
@@ -86,8 +86,12 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
     public static class Builder {
         private Vec3 offset = Vec3.ZERO;
         private Vec3 range = new Vec3(1.0, 1.0, 1.0);
-        private final ItemPredicate.Builder item = ItemPredicate.Builder.item();
+        private final ItemPredicate.Builder item;
         private final List<IPredicateFunction<?>> functions = new ArrayList<>();
+
+        public Builder(HolderGetter<Item> getter) {
+            this.item = ItemPredicate.Builder.item(getter);
+        }
 
         /**
          * 设置偏移量
@@ -202,8 +206,8 @@ public class HasItem extends HasItemBase<HasItem, ItemPredicate> {
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
-            this.item.of(getter, tag);
+        public Builder of(TagKey<Item> tag) {
+            this.item.of(tag);
             return this;
         }
 

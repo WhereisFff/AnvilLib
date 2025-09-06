@@ -65,6 +65,7 @@ public record ItemPredicate(
      */
     @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
+        private final HolderGetter<Item> getter;
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private Optional<HolderSet<Item>> items = Optional.empty();
         private MinMaxBounds.Ints count;
@@ -73,7 +74,8 @@ public record ItemPredicate(
         /**
          * 构造一个构建器
          */
-        private Builder() {
+        private Builder(HolderGetter<Item> getter) {
+            this.getter = getter;
             this.count = MinMaxBounds.Ints.ANY;
             this.components = DataComponentMatchers.Builder.components();
         }
@@ -83,8 +85,8 @@ public record ItemPredicate(
          *
          * @return 构建器实例
          */
-        public static Builder item() {
-            return new Builder();
+        public static Builder item(HolderGetter<Item> getter) {
+            return new Builder(getter);
         }
 
         /**
@@ -105,8 +107,8 @@ public record ItemPredicate(
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
-            this.items = Optional.of(getter.getOrThrow(tag));
+        public Builder of(TagKey<Item> tag) {
+            this.items = Optional.of(this.getter.getOrThrow(tag));
             return this;
         }
 

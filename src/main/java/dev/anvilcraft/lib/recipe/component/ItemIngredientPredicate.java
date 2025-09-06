@@ -16,7 +16,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.component.predicates.DataComponentPredicate;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -64,8 +63,8 @@ public record ItemIngredientPredicate(
      * @param items 物品数组
      * @return 构建器实例
      */
-    public static Builder of(ItemLike... items) {
-        return new Builder().of(items);
+    public static Builder of(HolderGetter<Item> getter, ItemLike... items) {
+        return new Builder(getter).of(items);
     }
 
     /**
@@ -75,7 +74,7 @@ public record ItemIngredientPredicate(
      * @return 构建器实例
      */
     public static Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
-        return new Builder().of(getter, tag);
+        return new Builder(getter).of(tag);
     }
 
     @Override
@@ -129,6 +128,7 @@ public record ItemIngredientPredicate(
      */
     @SuppressWarnings("UnusedReturnValue")
     public static class Builder {
+        private final HolderGetter<Item> getter;
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private Optional<HolderSet<Item>> items = Optional.empty();
         private int count;
@@ -137,7 +137,8 @@ public record ItemIngredientPredicate(
         /**
          * 构造一个构建器
          */
-        private Builder() {
+        private Builder(HolderGetter<Item> getter) {
+            this.getter = getter;
             this.count = 1;
             this.components = DataComponentMatchers.Builder.components();
         }
@@ -147,8 +148,8 @@ public record ItemIngredientPredicate(
          *
          * @return 构建器实例
          */
-        public static Builder item() {
-            return new Builder();
+        public static Builder item(HolderGetter<Item> getter) {
+            return new Builder(getter);
         }
 
         /**
@@ -169,8 +170,8 @@ public record ItemIngredientPredicate(
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
-            this.items = Optional.of(getter.getOrThrow(tag));
+        public Builder of(TagKey<Item> tag) {
+            this.items = Optional.of(this.getter.getOrThrow(tag));
             return this;
         }
 

@@ -3,8 +3,6 @@ package dev.anvilcraft.lib.config;
 import com.google.common.collect.ImmutableList;
 import dev.anvilcraft.lib.util.FormattingUtil;
 import lombok.extern.slf4j.Slf4j;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;

@@ -41,8 +41,8 @@ public class HasBlock extends HasBlockBase<HasBlock> {
      *
      * @return 构建器实例
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Builder builder(HolderGetter<Block> getter) {
+        return new Builder(getter);
     }
 
     /**
@@ -60,7 +60,11 @@ public class HasBlock extends HasBlockBase<HasBlock> {
      */
     public static class Builder {
         private Vec3 offset = Vec3.ZERO;
-        private final BlockStatePredicate.Builder predicate = BlockStatePredicate.builder();
+        private final BlockStatePredicate.Builder predicate;
+
+        public Builder(HolderGetter<Block> getter) {
+            this.predicate = BlockStatePredicate.builder(getter);
+        }
 
         /**
          * 设置偏移量
@@ -163,8 +167,8 @@ public class HasBlock extends HasBlockBase<HasBlock> {
          * @param tag 方块标签
          * @return 构建器实例
          */
-        public Builder of(HolderGetter<Block> getter, TagKey<Block> tag) {
-            this.predicate.of(getter, tag);
+        public Builder of(TagKey<Block> tag) {
+            this.predicate.of(tag);
             return this;
         }
 
@@ -226,11 +230,7 @@ public class HasBlock extends HasBlockBase<HasBlock> {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder with(
-            Property<T> property,
-            @Nullable T minValue,
-            @Nullable T maxValue
-        ) {
+        public <T extends Comparable<T>> Builder with(Property<T> property, @Nullable T minValue, @Nullable T maxValue) {
             this.predicate.with(property, minValue, maxValue);
             return this;
         }
@@ -243,10 +243,7 @@ public class HasBlock extends HasBlockBase<HasBlock> {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder withMin(
-            Property<T> property,
-            T minValue
-        ) {
+        public <T extends Comparable<T>> Builder withMin(Property<T> property, T minValue) {
             this.predicate.withMin(property, minValue);
             return this;
         }
@@ -259,10 +256,7 @@ public class HasBlock extends HasBlockBase<HasBlock> {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder withMax(
-            Property<T> property,
-            T maxValue
-        ) {
+        public <T extends Comparable<T>> Builder withMax(Property<T> property, T maxValue) {
             this.predicate.withMax(property, maxValue);
             return this;
         }
