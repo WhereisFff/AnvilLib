@@ -5,6 +5,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import dev.anvilcraft.lib.util.CodecUtil;
 import net.minecraft.advancements.critereon.DataComponentMatchers;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryCodecs;
 import net.minecraft.core.component.DataComponentExactPredicate;
@@ -12,7 +13,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.component.predicates.DataComponentPredicate;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -29,9 +29,9 @@ import java.util.Optional;
  * 用于定义物品匹配规则，包括物品类型、数量范围、组件和子谓词
  * </p>
  *
- * @param items         物品集合
- * @param count         数量范围
- * @param components    数据组件谓词
+ * @param items      物品集合
+ * @param count      数量范围
+ * @param components 数据组件谓词
  */
 public record ItemPredicate(
     Optional<HolderSet<Item>> items, MinMaxBounds.Ints count, DataComponentMatchers components
@@ -105,8 +105,8 @@ public record ItemPredicate(
          * @param tag 物品标签
          * @return 构建器实例
          */
-        public Builder of(TagKey<Item> tag) {
-            this.items = BuiltInRegistries.ITEM.get(tag).map(item -> item);
+        public Builder of(HolderGetter<Item> getter, TagKey<Item> tag) {
+            this.items = Optional.of(getter.getOrThrow(tag));
             return this;
         }
 
@@ -154,6 +154,7 @@ public record ItemPredicate(
             this.components.partial(type, predicate);
             return this;
         }
+
         /**
          * 构建ItemPredicate实例
          *

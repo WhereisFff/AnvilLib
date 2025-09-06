@@ -319,7 +319,8 @@ public class InWorldRecipeBuilder<T extends InWorldRecipeBuilder<T>> implements 
      * @return 当前构建器实例
      */
     public T hasItem(TagKey<Item> items) {
-        return this.with(HasItem.builder().of(items).offset(this.offset).build());
+        if (this.itemGetter == null) return this.self();
+        return this.with(HasItem.builder().of(this.itemGetter, items).offset(this.offset).build());
     }
 
     /**
