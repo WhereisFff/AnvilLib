@@ -106,7 +106,7 @@ public record ItemPredicate(
          * @return 构建器实例
          */
         public Builder of(TagKey<Item> tag) {
-            this.items = Optional.of(BuiltInRegistries.ITEM.getOrThrow(tag));
+            this.items = BuiltInRegistries.ITEM.get(tag).map(item -> item);
             return this;
         }
 

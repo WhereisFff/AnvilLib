@@ -56,36 +56,22 @@ public class BlockStatePredicate {
     /**
      * 属性编解码器
      */
-    public static final Codec<List<PropertyMatcher>> PROPERTIES_CODEC = Codec.unboundedMap(
-            Codec.STRING, ValueMatcher.CODEC
-        )
+    public static final Codec<List<PropertyMatcher>> PROPERTIES_CODEC = Codec.unboundedMap(Codec.STRING, ValueMatcher.CODEC)
         .xmap(
-            map -> map.entrySet()
-                .stream()
-                .map(entry -> new PropertyMatcher(entry.getKey(), entry.getValue()))
-                .toList(),
-            list -> list.stream()
-                .collect(Collectors.toMap(PropertyMatcher::name, PropertyMatcher::valueMatcher))
+            map -> map.entrySet().stream().map(entry -> new PropertyMatcher(entry.getKey(), entry.getValue())).toList(),
+            list -> list.stream().collect(Collectors.toMap(PropertyMatcher::name, PropertyMatcher::valueMatcher))
         );
 
     /**
      * BlockStatePredicate编解码器
      */
-    public static final Codec<BlockStatePredicate> CODEC = RecordCodecBuilder.create(
-        instance -> instance.group(
-                RegistryCodecs.homogeneousList(Registries.BLOCK)
-                    .optionalFieldOf("blocks", HolderSet.empty())
-                    .forGetter(BlockStatePredicate::getBlocks),
-                PROPERTIES_CODEC
-                    .listOf()
-                    .optionalFieldOf("properties", List.of())
-                    .forGetter(BlockStatePredicate::getProperties),
-                NbtPredicate.CODEC.listOf()
-                    .optionalFieldOf("nbts", Collections.emptyList())
-                    .forGetter(BlockStatePredicate::getNbts)
-            )
-            .apply(instance, BlockStatePredicate::new)
-    );
+    public static final Codec<BlockStatePredicate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        RegistryCodecs.homogeneousList(Registries.BLOCK)
+            .optionalFieldOf("blocks", HolderSet.empty())
+            .forGetter(BlockStatePredicate::getBlocks),
+        PROPERTIES_CODEC.listOf().optionalFieldOf("properties", List.of()).forGetter(BlockStatePredicate::getProperties),
+        NbtPredicate.CODEC.listOf().optionalFieldOf("nbts", Collections.emptyList()).forGetter(BlockStatePredicate::getNbts)
+    ).apply(instance, BlockStatePredicate::new));
 
     /**
      * BlockStatePredicate流编解码器
@@ -292,7 +278,7 @@ public class BlockStatePredicate {
          * @return 构建器实例
          */
         public Builder of(TagKey<Block> tag) {
-            this.blocks = BuiltInRegistries.BLOCK.getOrThrow(tag);
+            this.blocks = BuiltInRegistries.BLOCK.get(tag).map(named -> (HolderSet<Block>) named).orElse(HolderSet.direct());
             return this;
         }
 
@@ -354,20 +340,13 @@ public class BlockStatePredicate {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder with(
-            Property<T> property,
-            @Nullable T minValue,
-            @Nullable T maxValue
-        ) {
-            this.and.add(
-                new PropertyMatcher(
-                    property.getName(),
-                    new RangedMatcher(
-                        minValue == null ? Optional.empty() : Optional.of(minValue.toString()),
-                        maxValue == null ? Optional.empty() : Optional.of(maxValue.toString())
-                    )
-                )
-            );
+        public <T extends Comparable<T>> Builder with(Property<T> property, @Nullable T minValue, @Nullable T maxValue) {
+            this.and.add(new PropertyMatcher(
+                property.getName(), new RangedMatcher(
+                minValue == null ? Optional.empty() : Optional.of(minValue.toString()),
+                maxValue == null ? Optional.empty() : Optional.of(maxValue.toString())
+            )
+            ));
             return this;
         }
 
@@ -379,10 +358,7 @@ public class BlockStatePredicate {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder withMin(
-            Property<T> property,
-            T minValue
-        ) {
+        public <T extends Comparable<T>> Builder withMin(Property<T> property, T minValue) {
             return this.with(property, minValue, null);
         }
 
@@ -394,10 +370,7 @@ public class BlockStatePredicate {
          * @param <T>      属性值类型
          * @return 构建器实例
          */
-        public <T extends Comparable<T>> Builder withMax(
-            Property<T> property,
-            T maxValue
-        ) {
+        public <T extends Comparable<T>> Builder withMax(Property<T> property, T maxValue) {
             return this.with(property, null, maxValue);
         }
 
@@ -484,14 +457,15 @@ public class BlockStatePredicate {
         /**
          * ExactMatcher编解码器
          */
-        public static final Codec<ExactMatcher> CODEC = Codec.STRING
-            .xmap(ExactMatcher::new, ExactMatcher::value);
+        public static final Codec<ExactMatcher> CODEC = Codec.STRING.xmap(ExactMatcher::new, ExactMatcher::value);
 
         /**
          * ExactMatcher流编解码器
          */
-        public static final StreamCodec<ByteBuf, ExactMatcher> STREAM_CODEC = ByteBufCodecs.STRING_UTF8
-            .map(ExactMatcher::new, ExactMatcher::value);
+        public static final StreamCodec<ByteBuf, ExactMatcher> STREAM_CODEC = ByteBufCodecs.STRING_UTF8.map(
+            ExactMatcher::new,
+            ExactMatcher::value
+        );
 
         @Override
         public <T extends Comparable<T>> boolean match(StateHolder<?, ?> value, Property<T> property) {
@@ -503,9 +477,7 @@ public class BlockStatePredicate {
         @Override
         public <T extends Comparable<T>, S extends StateHolder<?, S>> List<S> applyToState(S state, Property<T> property) {
             if (!state.hasProperty(property)) return List.of(state);
-            return property.getValue(this.value)
-                .map(value -> List.of(state.setValue(property, value)))
-                .orElseGet(() -> List.of(state));
+            return property.getValue(this.value).map(value -> List.of(state.setValue(property, value))).orElseGet(() -> List.of(state));
         }
     }
 
@@ -516,13 +488,11 @@ public class BlockStatePredicate {
         /**
          * RangedMatcher编解码器
          */
-        public static final Codec<RangedMatcher> CODEC = RecordCodecBuilder.create(
-            instance -> instance.group(
-                    Codec.STRING.optionalFieldOf("min").forGetter(RangedMatcher::minValue),
-                    Codec.STRING.optionalFieldOf("max").forGetter(RangedMatcher::maxValue)
-                )
-                .apply(instance, RangedMatcher::new)
-        );
+        public static final Codec<RangedMatcher> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.STRING.optionalFieldOf(
+                "min").forGetter(RangedMatcher::minValue),
+            Codec.STRING.optionalFieldOf("max").forGetter(RangedMatcher::maxValue)
+        ).apply(instance, RangedMatcher::new));
 
         /**
          * RangedMatcher流编解码器
@@ -559,9 +529,11 @@ public class BlockStatePredicate {
             List<S> states = new ArrayList<>();
             property.getAllValues()
                 .filter(value -> this.minValue.isEmpty() || this.minValue.flatMap(property::getValue)
-                    .map(minValue -> value.value().compareTo(minValue) < 0).orElse(false))
+                    .map(minValue -> value.value().compareTo(minValue) < 0)
+                    .orElse(false))
                 .filter(value -> this.maxValue.isEmpty() || this.maxValue.flatMap(property::getValue)
-                    .map(maxValue -> value.value().compareTo(maxValue) > 0).orElse(false))
+                    .map(maxValue -> value.value().compareTo(maxValue) > 0)
+                    .orElse(false))
                 .forEachOrdered(value -> states.add(state.setValue(property, value.value())));
             return List.copyOf(states);
         }
@@ -574,38 +546,32 @@ public class BlockStatePredicate {
         /**
          * ValueMatcher编解码器
          */
-        Codec<ValueMatcher> CODEC = Codec.either(
-                ExactMatcher.CODEC, RangedMatcher.CODEC
-            )
-            .xmap(
-                Either::unwrap, matcher -> {
-                    if (matcher instanceof ExactMatcher exactMatcher) {
-                        return Either.left(exactMatcher);
-                    } else if (matcher instanceof RangedMatcher rangedMatcher) {
-                        return Either.right(rangedMatcher);
-                    } else {
-                        throw new UnsupportedOperationException();
-                    }
+        Codec<ValueMatcher> CODEC = Codec.either(ExactMatcher.CODEC, RangedMatcher.CODEC).xmap(
+            Either::unwrap, matcher -> {
+                if (matcher instanceof ExactMatcher exactMatcher) {
+                    return Either.left(exactMatcher);
+                } else if (matcher instanceof RangedMatcher rangedMatcher) {
+                    return Either.right(rangedMatcher);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
-            );
+            }
+        );
 
         /**
          * ValueMatcher流编解码器
          */
-        StreamCodec<ByteBuf, ValueMatcher> STREAM_CODEC = ByteBufCodecs.either(
-                ExactMatcher.STREAM_CODEC, RangedMatcher.STREAM_CODEC
-            )
-            .map(
-                Either::unwrap, matcher -> {
-                    if (matcher instanceof ExactMatcher exactMatcher) {
-                        return Either.left(exactMatcher);
-                    } else if (matcher instanceof RangedMatcher rangedMatcher) {
-                        return Either.right(rangedMatcher);
-                    } else {
-                        throw new UnsupportedOperationException();
-                    }
+        StreamCodec<ByteBuf, ValueMatcher> STREAM_CODEC = ByteBufCodecs.either(ExactMatcher.STREAM_CODEC, RangedMatcher.STREAM_CODEC).map(
+            Either::unwrap, matcher -> {
+                if (matcher instanceof ExactMatcher exactMatcher) {
+                    return Either.left(exactMatcher);
+                } else if (matcher instanceof RangedMatcher rangedMatcher) {
+                    return Either.right(rangedMatcher);
+                } else {
+                    throw new UnsupportedOperationException();
                 }
-            );
+            }
+        );
 
         /**
          * 测试值是否匹配
