@@ -13,7 +13,6 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import net.minecraft.MethodsReturnNonnullByDefault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.Vec3i;
@@ -43,7 +42,6 @@ import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -306,14 +304,11 @@ public abstract class CodecUtil {
 
         return new StreamCodec<>() {
             @Override
-            @ParametersAreNonnullByDefault
             public T decode(FriendlyByteBuf buffer) {
                 return codec.decode(NbtOps.INSTANCE, buffer.readNbt()).getOrThrow().getFirst();
             }
 
             @Override
-            @ParametersAreNonnullByDefault
-            @MethodsReturnNonnullByDefault
             public void encode(FriendlyByteBuf buffer, T value) {
                 buffer.writeNbt(codec.encodeStart(NbtOps.INSTANCE, value).getOrThrow());
             }
