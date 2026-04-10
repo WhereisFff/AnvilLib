@@ -45,8 +45,8 @@ neoForge {
     // accessTransformers.add('src/main/resources/META-INF/accesstransformer.cfg')
 
     interfaceInjectionData {
-         from 'src/main/resources/interface_injections.json'
-         publish file('src/main/resources/interface_injections.json')
+        // from 'src/main/resources/interface_injections.json'
+        // publish file('src/main/resources/interface_injections.json')
     }
 
     // Default run configurations.
@@ -74,7 +74,7 @@ neoForge {
         }
 
         data {
-            clientData()
+            data()
 
             // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
             // gameDirectory = project.file('run-data')
