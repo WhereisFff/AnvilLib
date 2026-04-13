@@ -20,7 +20,9 @@ AnvilLib adopts a modular design and includes the following functional modules:
 | **Network**               | Networking API with automatic packet registration |
 | **Recipe**                | In-world recipe system                            |
 | **Moveable Entity Block** | Support for block entities movable by pistons     |
+| **Multiblock**            | Dynamic multiblock system                         |
 | **Registrum**             | Simplified registration system                    |
+| **Util**                  | Shareable utilities                               |
 | **Wheel**                 | Radial wheel menu client API                      |
 | **Main**                  | Aggregated module that bundles all submodules     |
 
@@ -105,6 +107,83 @@ public class JEIIntegration {
 }
 ```
 
+### Moveable Entity Block Module
+
+Allows blocks with block entities to be pushed by pistons while preserving their data.
+
+**Usage Example:**
+
+```java
+public class MyBlock extends Block implements IMoveableEntityBlock {
+    @Override
+    public CompoundTag clearData(Level level, BlockPos pos) {
+        // Return block entity data to preserve
+        BlockEntity be = level.getBlockEntity(pos);
+        return be != null ? be.saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
+    }
+
+    @Override
+    public void setData(Level level, BlockPos pos, CompoundTag nbt) {
+        // Restore block entity data at new position
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be != null) {
+            be.loadAdditional(nbt, level.registryAccess());
+        }
+    }
+}
+```
+
+### Multiblock Module
+
+Provides a flexible system for creating and managing dynamic multiblock structures — assemblies of blocks that behave as a single logical unit and can change shape at runtime.
+
+**Key Features:**
+
+- Define multiblock patterns using a declarative builder or data-driven JSON
+- Support for dynamic reconfiguration (add / remove parts at runtime)
+- Integration with block entities and custom rendering
+- Event hooks for placement, validation and activation
+
+**Usage Example:**
+
+```java
+// Register definition when datapack bootstrapping
+public static void bootstrap(BootstrapContext<MultiblockDefinition> ctx) {
+    // Define a simple multiblock from a builder
+    MultiblockDefinition furnaceArray = MultiblockDefinition.seriaBuilder()
+        .layer( // bottom layer
+            "###",
+            "#0#",
+            "###"
+        )
+        .mapController(Blocks.DISPENSER)
+        .map('#', Blocks.STONE)
+        .build();
+    ctx.register(
+        RESOURCE_KEY, // The resource key of this multiblock
+        furnaceArray
+    );
+}
+
+// Register controller when initializing
+public static void init() {
+    ControllerRecord.register(new SimpleController(
+        Blocks.DISPENSER,
+        RESOURCE_KEY // The resource key of this multiblock
+    ) {
+        @Override
+        public void onFormed(Level level, MultiblockState state) {
+            // when formed...
+        }
+
+        @Override
+        public void onUnformed(Level level, MultiblockState state) {
+            // when unformed...
+        }
+    });
+}
+```
+
 ### Network Module
 
 Provides a NeoForge networking abstraction with package-based packet auto-registration.
@@ -144,32 +223,6 @@ Provides an in-world recipe system, allowing recipes to be executed in the world
 - **Predicate**: Recipe matching conditions
 - **Outcome**: Recipe execution results (e.g., spawning items, setting blocks)
 
-### Moveable Entity Block Module
-
-Allows blocks with block entities to be pushed by pistons while preserving their data.
-
-**Usage Example:**
-
-```java
-public class MyBlock extends Block implements IMoveableEntityBlock {
-    @Override
-    public CompoundTag clearData(Level level, BlockPos pos) {
-        // Return block entity data to preserve
-        BlockEntity be = level.getBlockEntity(pos);
-        return be != null ? be.saveWithoutMetadata(level.registryAccess()) : new CompoundTag();
-    }
-
-    @Override
-    public void setData(Level level, BlockPos pos, CompoundTag nbt) {
-        // Restore block entity data at new position
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be != null) {
-            be.loadAdditional(nbt, level.registryAccess());
-        }
-    }
-}
-```
-
 ### Registrum Module
 
 A registration system based on [Registrate](https://github.com/IThundxr/Registrate), simplifying the registration process for items, blocks,
@@ -191,6 +244,32 @@ public static final RegistryEntry<Item> MY_ITEM = REGISTRUM
     .item("my_item", Item::new)
     .properties(p -> p.stacksTo(16))
     .register();
+```
+
+### Util Module
+
+The `util` module contains a set of small, well-tested helper utilities that are commonly useful across mods. It focuses on concise, reusable primitives to reduce boilerplate.
+
+**Key Features:**
+
+- Collection and iteration helpers (nullable-safe operations, indexed transforms)
+- NBT and Tag utilities for safe read/write and migration helpers
+- Common math and geometry helpers (Vec helpers, angle/math utilities)
+- Item / inventory helpers for common inventory operations
+
+**Usage Example:**
+
+```java
+// Example: safely casting object
+public AClass(Level level, BlockPos pos) {
+    this(Util.castSafely(level.getBlockEntity(pos), ChestBlockEntity.class).orElse(null));
+}
+
+// Example: use ShapeUtil to construct VoxelShape
+VoxelShape shape = ShapeUtil.merge(
+    new AABB(0, 0, 0, 10, 10, 10),
+    new AABB(1, 10, 1, 9, 16, 9)
+);
 ```
 
 ### Wheel Module
@@ -251,10 +330,12 @@ dependencies {
     implementation "dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0"
-    implementation "dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0"
+    implementation "dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0"
     implementation "dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0"
 }
 ```
@@ -270,8 +351,15 @@ dependencies {
     implementation("dev.anvilcraft.lib:anvillib-neoforge-1.21.1:2.0.0")
 
     // Optional single-module example
-    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-multiblock-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.1:2.0.0")
+    implementation("dev.anvilcraft.lib:anvillib-util-neoforge-1.21.1:2.0.0")
     implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.1:2.0.0")
 }
 ```
@@ -308,6 +396,9 @@ Part of the Registrum module code is based on [Registrate](https://github.com/IT
 ## Author
 
 - **Gugle** - Main developer
+- **Abslb** - Contributor
+- **QiuShui1012** - Contributor
+- **ZhuRuoLing** - Contributor
 
 ## Links
 
