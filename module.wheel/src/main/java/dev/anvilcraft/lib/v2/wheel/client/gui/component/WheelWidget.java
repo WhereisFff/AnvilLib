@@ -26,6 +26,7 @@ import org.joml.Vector2f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 public class WheelWidget extends AbstractWidget {
     public static final int IGNORE_CURSOR_MOVE_LENGTH = 15;
@@ -57,35 +58,36 @@ public class WheelWidget extends AbstractWidget {
     @Getter
     @Setter
     private boolean closingAnimationStarted = false;
+    private final int deadZone;
 
     public WheelWidget(
         int x, int y, int width, int height,
         float ringInnerRadius, float ringOuterRadius, float textScale,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
-        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, textScale, sections);
+        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, textScale, sections, deadZone);
     }
 
     public WheelWidget(
         int x, int y, int width, int height,
         float ringInnerRadius, float ringOuterRadius, float textScale, float degreeOffsetAngle,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
-        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, textScale, degreeOffsetAngle, sections);
+        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, textScale, degreeOffsetAngle, sections, deadZone);
     }
 
     public WheelWidget(
         int x, int y, int width, int height,
         float ringInnerRadius, float ringOuterRadius,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
-        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, sections);
+        this(x, y, width, height, Component.empty(), ringInnerRadius, ringOuterRadius, sections, deadZone);
     }
 
     public WheelWidget(
         int x, int y, int width, int height, Component message,
         float ringInnerRadius, float ringOuterRadius, float textScale, float degreeOffsetAngle,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
         this(
             x, y, width, height, message,
@@ -94,14 +96,14 @@ public class WheelWidget extends AbstractWidget {
             0x88000000,
             0xddffff00, 20, 5f,
             0xfdfdfd, textScale, degreeOffsetAngle,
-            sections
+            sections, deadZone
         );
     }
 
     public WheelWidget(
         int x, int y, int width, int height, Component message,
         float ringInnerRadius, float ringOuterRadius,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
         this(
             x, y, width, height, message,
@@ -110,14 +112,14 @@ public class WheelWidget extends AbstractWidget {
             0x88000000,
             0xddffff00, 20, 5f,
             0xfdfdfd, 1f, 0f,
-            sections
+            sections, deadZone
         );
     }
 
     public WheelWidget(
         int x, int y, int width, int height, Component message,
         float ringInnerRadius, float ringOuterRadius, float degreeOffsetAngle,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
         this(
             x, y, width, height, message,
@@ -126,7 +128,7 @@ public class WheelWidget extends AbstractWidget {
             0x88000000,
             0xddffff00, 20, 5f,
             0xfdfdfd, 1f, degreeOffsetAngle,
-            sections
+            sections, deadZone
         );
     }
 
@@ -137,7 +139,7 @@ public class WheelWidget extends AbstractWidget {
         int ringColor,
         int selectionEffectColor, int selectionEffectRadius, float selectionAnimationSpeedFactor,
         int textColor, float textScale,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
         this(
             x, y, width, height, Component.empty(),
@@ -146,7 +148,7 @@ public class WheelWidget extends AbstractWidget {
             ringColor,
             selectionEffectColor, selectionEffectRadius, selectionAnimationSpeedFactor,
             textColor, textScale, 0f,
-            sections
+            sections, deadZone
         );
     }
 
@@ -157,7 +159,7 @@ public class WheelWidget extends AbstractWidget {
         int ringColor,
         int selectionEffectColor, int selectionEffectRadius, float selectionAnimationSpeedFactor,
         int textColor, float textScale, float degreeOffsetAngle,
-        List<RawSection> sections
+        List<RawSection> sections, int deadZone
     ) {
         super(x, y, width, height, message);
         this.centerPos = new Vector2f(this.getX() + this.getWidth() / 2f, this.getY() + this.getHeight() / 2f);
@@ -172,6 +174,7 @@ public class WheelWidget extends AbstractWidget {
         this.selectionAnimationSpeedFactor = selectionAnimationSpeedFactor;
         this.textColor = textColor;
         this.textScale = textScale;
+        this.deadZone = deadZone;
         float degreeEachRotation = 360f / sections.size();
         for (int i = 0; i < sections.size(); i++) {
             RawSection section = sections.get(i);
@@ -256,7 +259,10 @@ public class WheelWidget extends AbstractWidget {
         float centerX = this.centerPos.x;
         float centerY = this.centerPos.y;
         Vector2f cursorPos = new Vector2f((float) mouseX - centerX, (float) mouseY - centerY);
-        if (cursorPos.length() < IGNORE_CURSOR_MOVE_LENGTH) return;
+        if (cursorPos.length() < this.deadZone) {
+            this.currentSectionIndex = -1;
+            return;
+        }
         Vector2f rotationStart = new Vector2f(0, 1);
         cursorPos.normalize();
         double rot = Math.acos(rotationStart.dot(cursorPos) / (rotationStart.length() * cursorPos.length()));
@@ -330,14 +336,19 @@ public class WheelWidget extends AbstractWidget {
             this.ringInnerRadius * 2,
             this.ringOuterRadius * 2
         );
-        this.renderSelection(guiGraphics);
+        if (this.currentSectionIndex != -1) {
+            this.renderSelection(guiGraphics);
+        }
         for (WheelSection value : this.sections) {
             float x = value.center.x;
             float y = value.center.y;
-            poseStack.pushPose();
-            poseStack.translate(x - 10, y - 10, 100);
-            value.renderer().render(guiGraphics, poseStack, 20, 20);
-            poseStack.popPose();
+            var renderer = value.renderer();
+            if (renderer != null) {
+                poseStack.pushPose();
+                poseStack.translate(x - 10, y - 10, 100);
+                renderer.render(guiGraphics, poseStack, 20, 20);
+                poseStack.popPose();
+            }
             poseStack.pushPose();
             float coordinateScale = 0.7f;
             float offsetX = 0.1f * this.width;
@@ -348,6 +359,9 @@ public class WheelWidget extends AbstractWidget {
             poseStack.translate(offsetX, offsetY, 0);
             poseStack.scale(coordinateScale, coordinateScale, coordinateScale);
             poseStack.translate(adjustedX, adjustedY, 0);
+            if (renderer == null) {
+                poseStack.translate(0, ((this.selectionEffectRadius / 2.0f) + minecraft.font.lineHeight) * this.textScale, 0);
+            }
             poseStack.scale(this.textScale / coordinateScale, this.textScale / coordinateScale, this.textScale / coordinateScale);
             guiGraphics.drawCenteredString(
                 minecraft.font,
@@ -407,10 +421,13 @@ public class WheelWidget extends AbstractWidget {
             ).mul(this.getSectionCircleDiameter() * progress).add(this.centerPos.x, this.centerPos.y);
             float x = center.x;
             float y = center.y;
-            poseStack.pushPose();
-            poseStack.translate(x - 10, y - 10, 100);
-            value.renderer().render(guiGraphics, poseStack, 20, 20);
-            poseStack.popPose();
+            var renderer = value.renderer();
+            if (renderer != null) {
+                poseStack.pushPose();
+                poseStack.translate(x - 10, y - 10, 100);
+                renderer.render(guiGraphics, poseStack, 20, 20);
+                poseStack.popPose();
+            }
             final int textAlpha = (int) (progress * 0xff) << 24;
             poseStack.pushPose();
             float coordinateScale = 0.7f;
@@ -422,6 +439,9 @@ public class WheelWidget extends AbstractWidget {
             poseStack.translate(offsetX, offsetY, 0);
             poseStack.scale(coordinateScale, coordinateScale, coordinateScale);
             poseStack.translate(adjustedX, adjustedY, 0);
+            if (renderer == null) {
+                poseStack.translate(0, ((this.selectionEffectRadius / 2.0f) + minecraft.font.lineHeight) * this.textScale, 0);
+            }
             poseStack.scale(this.textScale / coordinateScale, this.textScale / coordinateScale, this.textScale / coordinateScale);
             guiGraphics.drawCenteredString(
                 this.minecraft.font,
@@ -485,7 +505,7 @@ public class WheelWidget extends AbstractWidget {
         float angleStart,
         float angleEnd,
         Component subTitle,
-        SectionRenderer renderer,
+        @Nullable SectionRenderer renderer,
         boolean selectable
     ) {
         public WheelSection(
@@ -499,8 +519,8 @@ public class WheelWidget extends AbstractWidget {
         }
     }
 
-    public record RawSection(Component name, SectionRenderer renderer, boolean selectable) {
-        public RawSection(Component name, SectionRenderer renderer) {
+    public record RawSection(Component name, @Nullable SectionRenderer renderer, boolean selectable) {
+        public RawSection(Component name, @Nullable SectionRenderer renderer) {
             this(name, renderer, true);
         }
     }
