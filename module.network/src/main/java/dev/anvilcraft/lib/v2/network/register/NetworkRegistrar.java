@@ -92,7 +92,7 @@ public class NetworkRegistrar {
                 switch (data.direction()) {
                     case CLIENTBOUND -> registrar.configurationToClient(data.type(), data.streamCodec(), data.handler());
                     case SERVERBOUND -> registrar.configurationToServer(data.type(), data.streamCodec(), data.handler());
-                    case BIDIRECTIONAL -> registrar.configurationBidirectional(data.type(), data.streamCodec(), data.handler());
+                    case BIDIRECTIONAL -> registrar.configurationBidirectional(data.type(), data.streamCodec(), data.handler(), data.handler());
                 }
             }
             case PLAY -> {
@@ -101,7 +101,7 @@ public class NetworkRegistrar {
                 switch (data.direction()) {
                     case CLIENTBOUND -> registrar.playToClient(data.type(), data.streamCodec(), data.handler());
                     case SERVERBOUND -> registrar.playToServer(data.type(), data.streamCodec(), data.handler());
-                    case BIDIRECTIONAL -> registrar.playBidirectional(data.type(), data.streamCodec(), data.handler());
+                    case BIDIRECTIONAL -> registrar.playBidirectional(data.type(), data.streamCodec(), data.handler(), data.handler());
                 }
             }
             case COMMON -> {
@@ -110,7 +110,7 @@ public class NetworkRegistrar {
                 switch (data.direction()) {
                     case CLIENTBOUND -> registrar.commonToClient(data.type(), data.streamCodec(), data.handler());
                     case SERVERBOUND -> registrar.commonToServer(data.type(), data.streamCodec(), data.handler());
-                    case BIDIRECTIONAL -> registrar.commonBidirectional(data.type(), data.streamCodec(), data.handler());
+                    case BIDIRECTIONAL -> registrar.commonBidirectional(data.type(), data.streamCodec(), data.handler(), data.handler());
                 }
             }
         }
