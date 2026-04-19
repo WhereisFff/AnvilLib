@@ -200,6 +200,8 @@ jobs:
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
   registrum:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
     with:
       module: registrum
       module_id: anvillib-registrum

@@ -81,6 +81,8 @@ jobs:
       pr_build: true
   registrum:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
     with:
       module: registrum
       module_id: anvillib-registrum
