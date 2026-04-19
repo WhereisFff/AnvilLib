@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.util;
 
 import com.google.common.collect.Multimap;
+import lombok.experimental.UtilityClass;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
@@ -9,7 +10,8 @@ import java.util.SequencedCollection;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public abstract class CollectionUtil {
+@UtilityClass
+public final class CollectionUtil {
     public static <T> boolean allMatch(Collection<T> collection, Predicate<T> matcher) {
         for (T t : collection) {
             if (!matcher.test(t)) return false;

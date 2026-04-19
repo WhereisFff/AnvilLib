@@ -1,11 +1,13 @@
 package dev.anvilcraft.lib.v2.util;
 
+import lombok.experimental.UtilityClass;
 import net.minecraft.world.level.storage.loot.providers.number.BinomialDistributionGenerator;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 
-public abstract class NumberProviderUtil {
+@UtilityClass
+public final class NumberProviderUtil {
     public static double expected(NumberProvider numberProvider) {
         return switch (numberProvider) {
             case ConstantValue value -> value.value();

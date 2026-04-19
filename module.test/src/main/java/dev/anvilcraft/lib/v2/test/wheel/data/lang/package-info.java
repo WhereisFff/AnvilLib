@@ -1,7 +1,7 @@
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-package dev.anvilcraft.lib.v2.wheel.util;
+package dev.anvilcraft.lib.v2.test.wheel.data.lang;
 
-import com.mojang.logging.annotations.MethodsReturnNonnullByDefault;
+import net.minecraft.MethodsReturnNonnullByDefault;
 
 import javax.annotation.ParametersAreNonnullByDefault;

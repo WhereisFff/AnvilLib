@@ -2,6 +2,7 @@ package dev.anvilcraft.lib.v2.util;
 
 import com.mojang.datafixers.util.Pair;
 import lombok.SneakyThrows;
+import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
@@ -19,7 +20,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 @Slf4j(topic = "ShapeUtil")
-public abstract class ShapeUtil {
+@UtilityClass
+public final class ShapeUtil {
     public static Future<VoxelShape> threadedJoin(
         List<VoxelShape> shapes,
         BooleanOp function,

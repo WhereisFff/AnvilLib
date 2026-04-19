@@ -1,6 +1,7 @@
 package dev.anvilcraft.lib.v2.util;
 
 import dev.anvilcraft.lib.v2.util.nullness.NonNullBiConsumer;
+import lombok.experimental.UtilityClass;
 import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -15,7 +16,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public abstract class InventoryUtil {
+@UtilityClass
+public final class InventoryUtil {
     public static BiConsumer<ArrayList<ItemStack>, LivingEntity> compatConsumer = NonNullBiConsumer.noop();
 
     public static ItemStack getFirstItem(Inventory inventory, ItemLike item) {

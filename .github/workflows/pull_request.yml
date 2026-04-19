@@ -99,6 +99,8 @@ jobs:
       pr_build: true
   wheel:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
     with:
       module: wheel
       module_id: anvillib-wheel

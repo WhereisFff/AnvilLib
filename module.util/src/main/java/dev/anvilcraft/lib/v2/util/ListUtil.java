@@ -1,12 +1,15 @@
 package dev.anvilcraft.lib.v2.util;
 
+import lombok.experimental.UtilityClass;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.IntFunction;
 
-public abstract class ListUtil {
+@UtilityClass
+public final class ListUtil {
     public static <T> Optional<T> safelyGet(List<T> list, int index) {
         if (index < 0 || list.isEmpty() || index >= list.size()) return Optional.empty();
         return Optional.ofNullable(list.get(index));

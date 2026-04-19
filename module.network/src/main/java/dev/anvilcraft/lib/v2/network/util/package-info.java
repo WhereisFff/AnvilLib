@@ -1,6 +1,6 @@
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-package dev.anvilcraft.lib.v2.wheel.api;
+package dev.anvilcraft.lib.v2.network.util;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 

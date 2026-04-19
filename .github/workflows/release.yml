@@ -252,6 +252,8 @@ jobs:
       signing_password: ${{ secrets.SIGNING_PASSWORD }}
   wheel:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - util
     with:
       module: wheel
       module_id: anvillib-wheel

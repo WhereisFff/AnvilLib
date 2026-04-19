@@ -1,14 +1,80 @@
 package dev.anvilcraft.lib.v2.util;
 
+import lombok.experimental.UtilityClass;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.fml.util.thread.SidedThreadGroups;
 
-import javax.annotation.Nullable;
-
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import javax.annotation.Nullable;
 
-public abstract class Util {
+@UtilityClass
+public final class Util {
+    public static final Direction[][] CORNER_DIRECTIONS = new Direction[][] {
+        {Direction.EAST, Direction.NORTH},
+        {Direction.EAST, Direction.SOUTH},
+        {Direction.WEST, Direction.NORTH},
+        {Direction.WEST, Direction.SOUTH},
+    };
+
+    /**
+     * 判断给定的 {@code modId} 对应的模组是否加载
+     *
+     * @return 模组是否加载
+     */
+    public static boolean isLoaded(String modId) {
+        return ModList.get().isLoaded(modId);
+    }
+
+    /**
+     * 获取交互结果向物品交互结果转换器
+     *
+     * @return 交互结果向物品交互结果转换器
+     */
+    public static Function<InteractionResult, ItemInteractionResult> interactionResultConverter() {
+        return it -> switch (it) {
+            case SUCCESS, SUCCESS_NO_ITEM_USED -> ItemInteractionResult.SUCCESS;
+            case CONSUME -> ItemInteractionResult.CONSUME;
+            case CONSUME_PARTIAL -> ItemInteractionResult.CONSUME_PARTIAL;
+            case PASS -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            case FAIL -> ItemInteractionResult.FAIL;
+        };
+    }
+
+    public static <E, C extends Collection<E>> Optional<C> intoOptional(C collection) {
+        if (collection.isEmpty()) return Optional.empty();
+        return Optional.of(collection);
+    }
+
+    public static void acceptDirections(BlockPos blockPos, Consumer<BlockPos> blockPosConsumer) {
+        for (Direction direction : Direction.values()) {
+            blockPosConsumer.accept(blockPos.relative(direction));
+        }
+        for (Direction horizontal : Direction.Plane.HORIZONTAL) {
+            for (Direction vertical : Direction.Plane.VERTICAL) {
+                blockPosConsumer.accept(blockPos.relative(horizontal).relative(vertical));
+            }
+        }
+        for (Direction[] corner : CORNER_DIRECTIONS) {
+            BlockPos pos1 = blockPos;
+            for (Direction direction : corner) {
+                pos1 = pos1.relative(direction);
+            }
+            for (Direction verticalDirection : Direction.Plane.VERTICAL) {
+                pos1 = pos1.relative(verticalDirection);
+                blockPosConsumer.accept(pos1);
+            }
+        }
+    }
+
     /**
      * 当前环境是否为客户端
      *
@@ -16,6 +82,15 @@ public abstract class Util {
      */
     public static boolean isClient() {
         return FMLEnvironment.dist == Dist.CLIENT;
+    }
+
+    /**
+     * 当前环境是否为服务端
+     *
+     * @return 是否为服务端
+     */
+    public static boolean isServer() {
+        return Thread.currentThread().getThreadGroup() == SidedThreadGroups.SERVER;
     }
 
     /**
