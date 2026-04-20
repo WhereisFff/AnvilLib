@@ -56,35 +56,31 @@ public class BlockStatePredicate {
      * 属性编解码器
      */
     public static final Codec<List<PropertyMatcher>> PROPERTIES_CODEC = Codec.unboundedMap(
-            Codec.STRING, ValueMatcher.CODEC
-        )
-        .xmap(
-            map -> map.entrySet()
-                .stream()
-                .map(entry -> new PropertyMatcher(entry.getKey(), entry.getValue()))
-                .toList(),
-            list -> list.stream()
-                .collect(Collectors.toMap(PropertyMatcher::name, PropertyMatcher::valueMatcher))
-        );
+        Codec.STRING, ValueMatcher.CODEC
+    ).xmap(
+        map -> map.entrySet()
+            .stream()
+            .map(entry -> new PropertyMatcher(entry.getKey(), entry.getValue()))
+            .toList(),
+        list -> list.stream()
+            .collect(Collectors.toMap(PropertyMatcher::name, PropertyMatcher::valueMatcher))
+    );
 
     /**
      * BlockStatePredicate编解码器
      */
-    public static final Codec<BlockStatePredicate> CODEC = RecordCodecBuilder.create(
-        instance -> instance.group(
-                RegistryCodecs.homogeneousList(Registries.BLOCK)
-                    .optionalFieldOf("blocks", HolderSet.empty())
-                    .forGetter(BlockStatePredicate::getBlocks),
-                PROPERTIES_CODEC
-                    .listOf()
-                    .optionalFieldOf("properties", List.of())
-                    .forGetter(BlockStatePredicate::getProperties),
-                NbtPredicate.CODEC.listOf()
-                    .optionalFieldOf("nbts", Collections.emptyList())
-                    .forGetter(BlockStatePredicate::getNbts)
-            )
-            .apply(instance, BlockStatePredicate::new)
-    );
+    public static final Codec<BlockStatePredicate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+        RegistryCodecs.homogeneousList(Registries.BLOCK)
+            .optionalFieldOf("blocks", HolderSet.empty())
+            .forGetter(BlockStatePredicate::getBlocks),
+        PROPERTIES_CODEC
+            .listOf()
+            .optionalFieldOf("properties", List.of())
+            .forGetter(BlockStatePredicate::getProperties),
+        NbtPredicate.CODEC.listOf()
+            .optionalFieldOf("nbts", Collections.emptyList())
+            .forGetter(BlockStatePredicate::getNbts)
+    ).apply(instance, BlockStatePredicate::new));
 
     /**
      * BlockStatePredicate流编解码器
@@ -128,22 +124,30 @@ public class BlockStatePredicate {
     }
 
     public boolean test(LevelAccessor level, BlockState state, @Nullable BlockEntity entity) {
+        if (!this.testWithoutEntity(state)) return false;
+        return this.testEntity(level, state, entity);
+    }
+
+    public boolean testWithoutEntity(BlockState state) {
         if (this.blocks.size() > 0 && !state.is(this.blocks)) return false;
         if (this.properties.isEmpty()) return true;
-        boolean flag = false;
+        boolean orSuccess = false;
         for (List<PropertyMatcher> matchers : this.properties) {
-            boolean flag1 = true;
+            boolean andSuccess = true;
             for (PropertyMatcher matcher : matchers) {
                 if (!matcher.match(state.getBlock().getStateDefinition(), state)) {
-                    flag1 = false;
+                    andSuccess = false;
                     break;
                 }
             }
-            if (flag1) {
-                flag = true;
+            if (andSuccess) {
+                orSuccess = true;
             }
         }
-        if (!flag) return false;
+        return orSuccess;
+    }
+
+    public boolean testEntity(LevelAccessor level, BlockState state, @Nullable BlockEntity entity) {
         if (this.nbts.isEmpty()) return true;
         if (!state.hasBlockEntity() && !this.nbts.isEmpty()) return false;
         if (entity == null) return false;
@@ -151,6 +155,44 @@ public class BlockStatePredicate {
             if (nbt.test(entity.saveWithFullMetadata(level.registryAccess()))) return true;
         }
         return false;
+    }
+
+    /**
+     * 使用预序列化的 NBT 数据测试方块实体匹配（线程安全，可在工作线程调用）。
+     *
+     * @param state     方块状态
+     * @param entityNbt 预序列化的方块实体 NBT，若无方块实体则为 {@code null}
+     * @return 是否匹配
+     */
+    public boolean testEntityOffThread(BlockState state, @Nullable CompoundTag entityNbt) {
+        if (this.nbts.isEmpty()) return true;
+        if (!state.hasBlockEntity() && !this.nbts.isEmpty()) return false;
+        if (entityNbt == null) return false;
+        for (NbtPredicate nbt : this.nbts) {
+            if (nbt.test(entityNbt)) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 使用预序列化的快照数据测试匹配（线程安全，可在工作线程调用）。
+     *
+     * @param state     方块状态
+     * @param entityNbt 预序列化的方块实体 NBT，若无方块实体则为 {@code null}
+     * @return 是否匹配
+     */
+    public boolean testOffThread(BlockState state, @Nullable CompoundTag entityNbt) {
+        if (!this.testWithoutEntity(state)) return false;
+        return this.testEntityOffThread(state, entityNbt);
+    }
+
+    /**
+     * 判断此谓词是否依赖方块实体 NBT 数据。
+     *
+     * @return 若依赖 NBT 则返回 {@code true}
+     */
+    public boolean requiresBlockEntity() {
+        return !this.nbts.isEmpty();
     }
 
     private List<BlockState> statesCache;

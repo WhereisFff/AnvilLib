@@ -7,13 +7,14 @@ import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 @EventBusSubscriber(modid = AnvilLibMultiblock.MOD_ID)
 public class BlockEventListener {
     @SubscribeEvent
     public static void onPlace(BlockEvent.EntityPlaceEvent event) {
-        if (!(event.getLevel() instanceof Level level)) return;
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
         DynamicMultiblockManager.onPlace(level, event.getPos(), event.getState());
     }
 
@@ -27,5 +28,10 @@ public class BlockEventListener {
     public static void onServerTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
         DynamicMultiblockManager.checkMultiblockFormed(serverLevel);
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(ServerStoppedEvent event) {
+        DynamicMultiblockManager.shutdownExecutor();
     }
 }

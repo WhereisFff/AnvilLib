@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.Blocks;
 public class LibMultiblocks {
     public static final ResourceKey<MultiblockDefinition> SIMPLE = key(AnvilLibTest.of("simple"));
     public static final ResourceKey<MultiblockDefinition> COMPLICATED = key(AnvilLibTest.of("complicated"));
+    public static final ResourceKey<MultiblockDefinition> WAHT = key(AnvilLibTest.of("waht"));
 
     public static void bootstrap(BootstrapContext<MultiblockDefinition> ctx) {
         ctx.register(
@@ -26,6 +27,15 @@ public class LibMultiblocks {
             MultiblockDefinition.builder()
                 .addController(LibBlocks.TEST_CONTROLLER.get())
                 .add(new Vec3i(0, -1, 0), Blocks.IRON_BLOCK)
+                .build()
+        );
+        ctx.register(
+            WAHT,
+            MultiblockDefinition.seriaBuilder()
+                .layer("A")
+                .layer("0")
+                .mapController(Blocks.WHITE_BED)
+                .map('A', Blocks.IRON_BLOCK)
                 .build()
         );
     }

@@ -18,14 +18,25 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.neoforged.neoforge.network.PacketDistributor;
+import org.jetbrains.annotations.UnknownNullability;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 /**
@@ -41,6 +52,7 @@ import javax.annotation.Nullable;
  * <p>此数据在服务器上以 {@link SavedData} 形式持久化；客户端侧使用缓存实例。
  */
 public class DynamicMultiblockManager extends SavedData {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicMultiblockManager.class);
     private static final String TAG_LIST = "multiblocks";
     private static final String SAVED_DATA_NAME = AnvilLibMultiblock.of("multiblocks")
         .toString()
@@ -50,6 +62,12 @@ public class DynamicMultiblockManager extends SavedData {
     private final Map<Long, MultiblockState> multiblocks = new HashMap<>();
     private int tickCounterUnformed = 0;
     private int tickCounterFormed = 0;
+
+    /** 异步检测线程池（惰性初始化）。 */
+    private static volatile @UnknownNullability ExecutorService asyncExecutor;
+
+    /** 当前正在异步检测中的控制器位置集合，用于去重。 */
+    private final Set<Long> pendingChecks = ConcurrentHashMap.newKeySet();
 
     /**
      * 获取指定世界的 DynamicMultiblockManager 实例。
@@ -154,8 +172,7 @@ public class DynamicMultiblockManager extends SavedData {
         this.setDirty();
     }
 
-    public static void onPlace(Level level, BlockPos pos, BlockState state) {
-        if (level.isClientSide()) return;
+    public static void onPlace(ServerLevel level, BlockPos pos, BlockState state) {
         DynamicMultiblockManager manager = DynamicMultiblockManager.get(level);
 
         // 尝试通过所有定义匹配，这里以放置点为中心
@@ -164,10 +181,17 @@ public class DynamicMultiblockManager extends SavedData {
         var entries = definitions.listElements().toList();
         for (Holder.Reference<MultiblockDefinition> holder : entries) {
             MultiblockDefinition definition = holder.value();
+            try {
+                pos = ControllerRecord.get(state.getBlock(), holder.key().location())
+                    .correctPos(level, pos, state);
+                state = level.getBlockState(pos);
+            } catch (IllegalArgumentException ignored) {
+            }
             if (!definition.isController(level, state, null)) continue;
             MultiblockState mstate = new MultiblockState(pos.immutable(), holder);
             manager.add(mstate);
-            manager.checkMultiblockFormed(level, mstate);
+            // onPlace 时同步检测（立即反馈），不走异步
+            manager.checkMultiblockFormedSync(level, mstate);
         }
     }
 
@@ -208,10 +232,54 @@ public class DynamicMultiblockManager extends SavedData {
         }
     }
 
+    // ======================== 异步周期检测 ========================
+
     /**
-     * 周期性检测最近被移除及所有注册的多方块，尝试重新形成（如果条件满足）。
+     * 获取或创建异步检测线程池。
+     */
+    private static ExecutorService getOrCreateExecutor() {
+        if (asyncExecutor == null) {
+            synchronized (DynamicMultiblockManager.class) {
+                if (asyncExecutor == null) {
+                    int poolSize = Math.clamp(
+                        Runtime.getRuntime().availableProcessors() - 1,
+                        1,
+                        AnvilLibMultiblock.CONFIG.asyncThreadPoolSize
+                    );
+                    asyncExecutor = Executors.newFixedThreadPool(poolSize, r -> {
+                        Thread t = new Thread(r, "AnvilLib-MultiblockCheck");
+                        t.setDaemon(true);
+                        return t;
+                    });
+                }
+            }
+        }
+        return asyncExecutor;
+    }
+
+    /**
+     * 关闭异步线程池。应在服务器停止时调用。
+     */
+    public static void shutdownExecutor() {
+        synchronized (DynamicMultiblockManager.class) {
+            if (asyncExecutor != null) {
+                asyncExecutor.shutdownNow();
+                try {
+                    asyncExecutor.awaitTermination(5, TimeUnit.SECONDS);
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                }
+                asyncExecutor = null;
+            }
+        }
+    }
+
+    /**
+     * 周期性检测所有注册的多方块，尝试重新形成（如果条件满足）。
      *
-     * <p>此方法由定时调度器在服务器端调用。为降低开销，仅在计数器达到配置的间隔时执行实际检测。
+     * <p>此方法由定时调度器在服务器端每 tick 调用。在达到配置的间隔时，
+     * 在主线程上构建轻量不可变快照，然后提交到工作线程池异步执行谓词测试，
+     * 完成后将结果回调到主线程进行最终验证与状态更新。
      *
      * @param level 服务器世界实例或 {@code null}
      */
@@ -226,20 +294,88 @@ public class DynamicMultiblockManager extends SavedData {
 
         if (!checkUnformed && !checkFormed) return;
 
+        // 收集本次需要检测的候选（受 maxChecksPerTick 限制）
+        int maxChecks = AnvilLibMultiblock.CONFIG.maxChecksPerTick;
+        List<MultiblockState> candidates = new ArrayList<>();
         if (checkUnformed) {
             for (MultiblockState state : manager.multiblocks.values()) {
                 if (!checkFormed && state.isFormed()) continue;
-                manager.checkMultiblockFormed(level, state);
+                if (manager.pendingChecks.contains(state.getControllerPos().asLong())) continue;
+                candidates.add(state);
+                if (candidates.size() >= maxChecks) break;
             }
         } else {
             for (MultiblockState state : manager.multiblocks.values()) {
                 if (!state.isFormed()) continue;
-                manager.checkMultiblockFormed(level, state);
+                if (manager.pendingChecks.contains(state.getControllerPos().asLong())) continue;
+                candidates.add(state);
+                if (candidates.size() >= maxChecks) break;
             }
+        }
+
+        if (candidates.isEmpty()) return;
+
+        // 在主线程上为每个候选构建快照并提交异步任务
+        ExecutorService executor = getOrCreateExecutor();
+        for (MultiblockState mstate : candidates) {
+            MultiblockCheckSnapshot snapshot = buildSnapshot(level, mstate);
+
+            long posLong = mstate.getControllerPos().asLong();
+            manager.pendingChecks.add(posLong);
+
+            executor.submit(() -> {
+                try {
+                    boolean formed = snapshot.test();
+                    // 将结果回调到主线程
+                    level.getServer().execute(() -> {
+                        manager.pendingChecks.remove(posLong);
+                        // 最终一致性验证：确认该 multiblock 仍然注册
+                        MultiblockState current = manager.multiblocks.get(posLong);
+                        if (current == null) return;
+                        manager.updateFormed(level, current, formed);
+                    });
+                } catch (Throwable t) {
+                    LOGGER.error("Async multiblock check failed for pos {}", posLong, t);
+                    level.getServer().execute(() -> manager.pendingChecks.remove(posLong));
+                }
+            });
         }
     }
 
-    private void checkMultiblockFormed(Level level, MultiblockState state) {
+    /**
+     * 在主线程上为指定多方块状态构建不可变快照。
+     *
+     * <p>快照包含每个检测位置的 {@link BlockState} 和（若谓词依赖 NBT 则）预序列化的
+     * {@link CompoundTag}，使得工作线程无需访问 {@code Level}。
+     *
+     * @param level 服务器世界实例
+     * @param state 待检测的多方块状态
+     * @return 快照；若定义不存在则返回 {@code null}
+     */
+    private static MultiblockCheckSnapshot buildSnapshot(ServerLevel level, MultiblockState state) {
+        MultiblockDefinition def = state.getDefinition().value();
+        Map<BlockPos, BlockStatePredicate> global = def.toGlobal(state.getControllerPos());
+        Map<BlockPos, MultiblockCheckSnapshot.Entry> entries = new LinkedHashMap<>(global.size());
+        for (Map.Entry<BlockPos, BlockStatePredicate> entry : global.entrySet()) {
+            BlockPos pos = entry.getKey();
+            BlockStatePredicate predicate = entry.getValue();
+            BlockState blockState = level.getBlockState(pos);
+            CompoundTag entityNbt = null;
+            if (predicate.requiresBlockEntity()) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be != null) {
+                    entityNbt = be.saveWithFullMetadata(level.registryAccess());
+                }
+            }
+            entries.put(pos, new MultiblockCheckSnapshot.Entry(blockState, entityNbt, predicate));
+        }
+        return new MultiblockCheckSnapshot(state.getControllerPos().asLong(), entries);
+    }
+
+    /**
+     * 同步检测多方块形成状态（用于 onPlace 等需要立即反馈的场景）。
+     */
+    private void checkMultiblockFormedSync(Level level, MultiblockState state) {
         if (level.isClientSide) return;
         MultiblockDefinition def = state.getDefinition().value();
         Map<BlockPos, BlockStatePredicate> global = def.toGlobal(state.getControllerPos());
@@ -253,6 +389,8 @@ public class DynamicMultiblockManager extends SavedData {
         }
         this.updateFormed(level, state, ok);
     }
+
+    // ======================== 持久化 ========================
 
     /**
      * 从持久化数据中加载 DynamicMultiblockManager 的状态。

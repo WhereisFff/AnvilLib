@@ -13,4 +13,12 @@ public class AnvilLibMultiblockConfig {
     @Comment("The interval of checking formed multiblock (in ticks)")
     @BoundedDiscrete(min = 5, max = 100)
     public int formedMultiblockCheckInterval = 20;
+
+    @Comment("Thread pool size for async multiblock checking")
+    @BoundedDiscrete(min = 1, max = 16)
+    public int asyncThreadPoolSize = 4;
+
+    @Comment("Maximum number of multiblock checks submitted per tick")
+    @BoundedDiscrete(min = 1, max = 512)
+    public int maxChecksPerTick = 128;
 }
