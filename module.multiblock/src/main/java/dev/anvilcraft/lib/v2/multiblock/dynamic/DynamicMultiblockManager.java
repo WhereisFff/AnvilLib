@@ -147,10 +147,16 @@ public class DynamicMultiblockManager extends SavedData {
         BlockPos controllerPos = cur.getControllerPos();
         BlockState state = level.getBlockState(controllerPos);
         if (cur.getDefinition().value().isController(level, state, level.getBlockEntity(controllerPos))) {
-            IController controller = ControllerRecord.get(
-                state.getBlock(),
-                cur.getDefinitionKey().location()
-            );
+            IController controller;
+            try {
+                controller = ControllerRecord.get(
+                    state.getBlock(),
+                    cur.getDefinitionKey().location()
+                );
+            } catch (IllegalArgumentException e) {
+                LOGGER.error(e.getLocalizedMessage(), e);
+                throw e;
+            }
             if (formed) {
                 controller.onFormed(level, cur);
             } else {

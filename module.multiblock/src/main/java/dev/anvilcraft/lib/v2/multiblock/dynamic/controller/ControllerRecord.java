@@ -24,13 +24,11 @@ public class ControllerRecord {
                 CONTROLLERS.put(info, controller1);
                 return controller1;
             }
-            IllegalArgumentException e = new IllegalArgumentException(
+            throw new IllegalArgumentException(
                 "Attempt to get non IController and unregistered block."
                 + " Block Id: " + BuiltInRegistries.BLOCK.getKey(block) + ","
                 + " Multiblock Id: " + definitionId
             );
-            log.error(e.getLocalizedMessage(), e);
-            throw e;
         }
         return controller;
     }
