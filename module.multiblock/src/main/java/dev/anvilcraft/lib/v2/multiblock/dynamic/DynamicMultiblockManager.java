@@ -187,14 +187,18 @@ public class DynamicMultiblockManager extends SavedData {
         var entries = definitions.listElements().toList();
         for (Holder.Reference<MultiblockDefinition> holder : entries) {
             MultiblockDefinition definition = holder.value();
+            BlockPos correctedPos;
+            BlockState correctedState;
             try {
-                pos = ControllerRecord.get(state.getBlock(), holder.key().location())
+                correctedPos = ControllerRecord.get(state.getBlock(), holder.key().location())
                     .correctPos(level, pos, state);
-                state = level.getBlockState(pos);
+                correctedState = level.getBlockState(correctedPos);
             } catch (IllegalArgumentException ignored) {
+                correctedPos = pos;
+                correctedState = state;
             }
-            if (!definition.isController(level, state, null)) continue;
-            MultiblockState mstate = new MultiblockState(pos.immutable(), holder);
+            if (!definition.isController(level, correctedState, null)) continue;
+            MultiblockState mstate = new MultiblockState(correctedPos.immutable(), holder);
             manager.add(mstate);
             // onPlace 时同步检测（立即反馈），不走异步
             manager.checkMultiblockFormedSync(level, mstate);
