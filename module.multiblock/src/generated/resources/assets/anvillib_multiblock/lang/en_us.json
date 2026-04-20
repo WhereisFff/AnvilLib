@@ -1,0 +1,9 @@
+{
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval": "Formed Multiblock Check Interval",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval.tooltip": "The interval of checking formed multiblock (in ticks)",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml": "Anvillib Multiblock Common Configuration",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml.title": "Anvillib Multiblock Common Configuration",
+  "anvillib_multiblock.configuration.title": "Anvillib Multiblock Configuration",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval": "Unformed Multiblock Check Interval",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval.tooltip": "The interval of checking unformed multiblock (in ticks)"
+}

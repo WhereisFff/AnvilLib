@@ -1,0 +1,9 @@
+{
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval": "已成型多方块检查周期",
+  "anvillib_multiblock.configuration.formed_multiblock_check_interval.tooltip": "已成型的多方块的检查周期（以tick为单位）",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml": "铁砧库-多方块 通用配置",
+  "anvillib_multiblock.configuration.section.anvillib_multiblock.common.toml.title": "铁砧库-多方块 通用配置",
+  "anvillib_multiblock.configuration.title": "铁砧库-多方块 配置",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval": "未成型多方块检查周期",
+  "anvillib_multiblock.configuration.unformed_multiblock_check_interval.tooltip": "未成型的多方块的检查周期（以tick为单位）"
+}
