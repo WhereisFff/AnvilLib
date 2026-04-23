@@ -1,4 +1,4 @@
-package dev.anvilcraft.lib.v2.recipe.util;
+package dev.anvilcraft.lib.v2.util;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.network.RegistryFriendlyByteBuf;

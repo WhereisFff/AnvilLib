@@ -91,6 +91,8 @@ jobs:
       pr_build: true
   util:
     uses: ./.github/workflows/build_and_test.yml
+    needs:
+      - codec
     with:
       module: util
       module_id: anvillib-util
