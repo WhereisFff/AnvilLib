@@ -103,6 +103,34 @@ public final class ShapeUtil {
     }
 
     /**
+     * 将指定的若干形状从基底形状上切除
+     *
+     * @param base    基底形状
+     * @param cutters 要切除的形状
+     *
+     * @return 切除后的基底形状
+     * @apiNote 仅应用于方块形状初始化！
+     */
+    public static VoxelShape cut(VoxelShape base, VoxelShape... cutters) {
+        if (cutters.length == 0) return base;
+        return Shapes.join(base, ShapeUtil.merge(cutters), BooleanOp.ONLY_FIRST);
+    }
+
+    /**
+     * 将指定的若干碰撞箱从基底碰撞箱上切除
+     *
+     * @param base    基底碰撞箱
+     * @param cutters 要切除的碰撞箱
+     *
+     * @return 切除后的基底碰撞箱组成的形状
+     * @apiNote 仅应用于方块形状初始化！
+     */
+    public static VoxelShape cut(AABB base, AABB... cutters) {
+        if (cutters.length == 0) return ShapeUtil.box(base);
+        return Shapes.join(ShapeUtil.box(base), ShapeUtil.merge(cutters), BooleanOp.ONLY_FIRST);
+    }
+
+    /**
      * 合并指定的若干形状
      *
      * @param shapes 子形状
