@@ -126,16 +126,16 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     if (System.getenv("NOT_DEV") == 'true') {
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.11:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.11:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.11:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-config-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-codec-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-integration-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.11:latest.release"))
         interfaceInjectionData("dev.anvilcraft.lib:anvillib-moveable-entity-block-neoforge-1.21.11:latest.release")
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-network-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.11:latest.release"))
         interfaceInjectionData("dev.anvilcraft.lib:anvillib-recipe-neoforge-1.21.11:latest.release")
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.11:latest.release"))
-        jarJar(implementation("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-registrum-neoforge-1.21.11:latest.release"))
+        jarJar(api("dev.anvilcraft.lib:anvillib-wheel-neoforge-1.21.11:latest.release"))
     } else {
         jarJar(implementation project(":anvillib-config-neoforge-1.21.11"))
         jarJar(implementation project(":anvillib-codec-neoforge-1.21.11"))
