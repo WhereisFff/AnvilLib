@@ -1,10 +1,14 @@
 package dev.anvilcraft.lib.v2.util;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Message;
 import lombok.experimental.UtilityClass;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 
 import java.net.URI;
 import java.util.Date;
@@ -43,5 +47,16 @@ public class ComponentUtil {
             case null -> Component.literal("null");
             default -> Component.literal(arg.toString());
         };
+    }
+
+    public static Component dimension(ResourceKey<Level> key) {
+        return Component.translatable("dimension." + key.toString().replace(':', '.'));
+    }
+
+    public static Component findPlayerName(GameProfileCache cache, UUID id) {
+        return cache.get(id)
+            .map(GameProfile::getName)
+            .map(Component::literal)
+            .orElse(Component.literal("Unknown[" + id + "]"));
     }
 }
