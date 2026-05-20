@@ -9,6 +9,7 @@
     "PistonMovingBlockEntityMixin"
   ],
   "client": [
+    "PistonHeadRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
