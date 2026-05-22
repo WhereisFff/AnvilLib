@@ -13,7 +13,6 @@ import net.minecraft.world.level.block.piston.PistonMovingBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -22,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Optional;
+import javax.annotation.Nullable;
 
 @Mixin(PistonMovingBlockEntity.class)
 abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPistonMovingBlockEntityExtension {
@@ -56,7 +56,6 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
     }
 
     @Inject(method = "loadAdditional", at = @At("TAIL"))
-    @SuppressWarnings("NameDoesntMatchTargetClass")
     private void loadAdditional(ValueInput input, CallbackInfo ci) {
         Optional<ValueInput> child = input.child(anvillib$MOVEABLE_BLOCK_ENTITY);
         if (child.isEmpty()) return;
@@ -72,7 +71,6 @@ abstract class PistonMovingBlockEntityMixin extends BlockEntity implements IPist
     }
 
     @Inject(method = "saveAdditional", at = @At("TAIL"))
-    @SuppressWarnings("NameDoesntMatchTargetClass")
     private void saveAdditional(ValueOutput output, CallbackInfo ci) {
         if (this.anvillib$blockEntity == null) return;
         ValueOutput child = output.child(anvillib$MOVEABLE_BLOCK_ENTITY);
