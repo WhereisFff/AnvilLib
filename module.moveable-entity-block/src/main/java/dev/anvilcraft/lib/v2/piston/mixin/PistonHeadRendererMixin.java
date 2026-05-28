@@ -21,7 +21,6 @@ abstract class PistonHeadRendererMixin implements BlockEntityRenderer<PistonMovi
                  + "Lnet/minecraft/client/renderer/MultiBufferSource;II)V",
         at = @At("TAIL")
     )
-    @SuppressWarnings("NameDoesntMatchTargetClass")
     private void render(
         PistonMovingBlockEntity blockEntity,
         float partialTick,
@@ -38,8 +37,9 @@ abstract class PistonHeadRendererMixin implements BlockEntityRenderer<PistonMovi
         BlockEntityRenderer<BlockEntity> renderer = Minecraft.getInstance()
             .getBlockEntityRenderDispatcher()
             .getRenderer(be);
-        if (renderer == null) return;
-        renderer.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        if (renderer != null) {
+            renderer.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+        }
         poseStack.popPose();
     }
 }
