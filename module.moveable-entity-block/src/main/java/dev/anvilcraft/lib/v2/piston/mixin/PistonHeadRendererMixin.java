@@ -40,8 +40,9 @@ abstract class PistonHeadRendererMixin implements BlockEntityRenderer<PistonMovi
         BlockEntityRenderer<BlockEntity> renderer = Minecraft.getInstance()
             .getBlockEntityRenderDispatcher()
             .getRenderer(be);
-        if (renderer == null) return;
-        renderer.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, cameraPos);
+        if (renderer != null) {
+            renderer.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, cameraPos);
+        }
         poseStack.popPose();
     }
 }
