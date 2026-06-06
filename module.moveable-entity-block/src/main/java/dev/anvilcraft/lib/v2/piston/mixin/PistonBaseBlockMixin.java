@@ -48,7 +48,7 @@ abstract class PistonBaseBlockMixin {
     @SuppressWarnings("NameDoesntMatchTargetClass")
     private void setBlock(
         Level level, BlockPos pistonPos, Direction facing, boolean extending, CallbackInfoReturnable<Boolean> cir,
-        @Local(name = "pos") BlockPos pos,
+        @Local(name = "blockpos3") BlockPos pos,
         @Local(name = "direction") Direction pushDirection,
         @Local(name = "list1") List<BlockState> toPushShapes,
         @Local(name = "k") int i,
